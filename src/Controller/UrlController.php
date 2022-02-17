@@ -2,24 +2,29 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
+use App\Repository\UrlRepository;
+use App\Repository\UrlStatisticRepository;
 use App\Service\UrlService;
+use App\Service\UrlStatisticService;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
+/**
+ * @method User getUser()
+ */
 class UrlController extends AbstractController
 {
     private UrlService $urlService;
 
     public function __construct(UrlService $urlService)
     {
-        $this->UrlService = $urlService;
+        $this->urlService = $urlService;
     }
 
-    /**
-     * @Route("/url", name="url")
-     */
+    #[Route('/url', name: 'url')]
     public function index(): Response
     {
         return $this->render('url/index.html.twig', [
@@ -27,20 +32,32 @@ class UrlController extends AbstractController
         ]);
     }
 
-    /**
-     * Route("/ajax/shorten", name="url_add")
-     */
+    #[Route('/ajax/shorten', name: 'url_add')]
     public function add(Request $request): Response
     {
         $longUrl = $request->request->get('url');
 
         if (!$longUrl) {
-            return $this->json([
+            return  $this->json([
                 'statusCode' => 400,
                 'statusText' => 'MISSING_ARG_URL'
             ]);
         }
 
-        $this->UrlService->addUrl($longUrl);
+        $domain = $this->urlService->parseUrl($longUrl);
+
+        if (!$domain) {
+            return $this->json([
+                'statusCode => 500',
+                'statusText' => 'INVALID_ARG_URL'
+            ]);
+        }
+
+        $url = $this->urlService->addUrl($longUrl, $domain);
+
+        return $this->json([
+            'link' => $url->getLink(),
+            'longUrl' => $url->getLongUrl()
+        ]);
     }
 }

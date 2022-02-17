@@ -19,4 +19,3 @@ form.addEventListener('submit', function(e){
 const handleData = function(data) {
     console.log(data);
 }
-    
